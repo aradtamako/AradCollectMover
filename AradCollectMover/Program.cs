@@ -55,7 +55,7 @@ class Program
     private const uint InventoryHorizontalCount = 8;
 
     private static readonly TimeSpan HoldTime = TimeSpan.FromMilliseconds(50);
-    private static readonly TimeSpan Delay = TimeSpan.FromMilliseconds(100);
+    private static readonly TimeSpan Delay = TimeSpan.FromMilliseconds(30);
 
     private enum ClickType
     {
@@ -151,20 +151,20 @@ class Program
     /// </summary>
     static void TransferCollect(ClickType clickType)
     {
-        var point = GetClientAreaMousePosition();
-        if (point != null)
+        var clientAreaMousePosition = GetClientAreaMousePosition();
+        if (clientAreaMousePosition != null)
         {
             Windows.Win32.PInvoke.GetClientRect(new Windows.Win32.Foundation.HWND(AradProcess.MainWindowHandle), out var rect);
             var widthRate = (double)rect.Width / BaseWidth;
             var heightRate = (double)rect.Height / BaseHeight;
 
             var baseX = 0u;
-            if (point.Value.X > WarehouseBaseX && point.Value.X < InventoryBaseX)
+            if (clientAreaMousePosition.Value.X > WarehouseBaseX && clientAreaMousePosition.Value.X < InventoryBaseX)
             {
                 // コレクトを倉庫からインベントリに移動する処理
                 baseX = WarehouseBaseX;
             }
-            else if (point.Value.X > WarehouseBaseX)
+            else if (clientAreaMousePosition.Value.X > WarehouseBaseX)
             {
                 // コレクトをインベントリから倉庫に移動する処理
                 baseX = InventoryBaseX;
@@ -174,15 +174,17 @@ class Program
                 return;
             }
 
-            var index = Math.Floor((point.Value.X - (int)Math.Floor(baseX * widthRate)) / (double)Math.Floor(CellBaseWidth * widthRate));
+            var index = Math.Floor((clientAreaMousePosition.Value.X - (int)Math.Floor(baseX * widthRate)) / (double)Math.Floor(CellBaseWidth * widthRate));
+
+            Windows.Win32.PInvoke.GetCursorPos(out var point);
 
             // 1行目
             var line1Count = (InventoryHorizontalCount - index);
             for (var i = 0; i < line1Count; i++)
             {
                 MouseMove(
-                    point.Value.X + (int)Math.Floor((CellBaseWidth * i * widthRate)),
-                    point.Value.Y
+                    point.X + (int)Math.Floor((CellBaseWidth * i * widthRate)),
+                    point.Y
                     );
                 MouseClick(HoldTime, clickType);
             }
@@ -192,8 +194,8 @@ class Program
             for (var i = 0; i < line2Count; i++)
             {
                 MouseMove(
-                    point.Value.X - (int)Math.Floor((CellBaseWidth * index * widthRate)) + (int)Math.Floor((CellBaseWidth * i * widthRate)),
-                    point.Value.Y + (int)Math.Floor((CellBaseHeight * heightRate))
+                    point.X - (int)Math.Floor((CellBaseWidth * index * widthRate)) + (int)Math.Floor((CellBaseWidth * i * widthRate)),
+                    point.Y + (int)Math.Floor((CellBaseHeight * heightRate))
                     );
                 MouseClick(HoldTime, clickType);
             }
